@@ -2259,6 +2259,11 @@ const vegaSpec = (width, height, chartStruct) => {
       ]
     },
     {
+      name: "treeNaN",
+      source: "tree",
+      transform: [{ type: "collect", sort: {field: "superSize"} }]
+    },
+    {
       name: "nodes",
       source: "tree",
       transform: [{ type: "filter", expr: "datum.children" }]
@@ -2295,7 +2300,7 @@ const vegaSpec = (width, height, chartStruct) => {
     }
   ];
   const signals = [
-    //{ name: "testum", update: "warn('tree', data('tree') )" },
+    //{ name: "testum", update: "warn('treeNaN', data('treeNaN') )" },
     // {
     //   name: "testum2",
     //   update: "warn('levesSelected', data('leaveSelected') )"
@@ -2876,15 +2881,16 @@ const vegaSpec = (width, height, chartStruct) => {
             {
               //test: "(datum.y1-datum.y0) > 0",
               signal:
-                "min(floor(3*log(invert('yScale', abs(datum.y1-datum.y0)))), 24)"
+                "warn('fontSize', datum.l === 44 && datum, min(floor(4*log(scale('fontScale', abs(datum.y1-datum.y0)))), 28))"
             },
             //{ value: 12 }
             
           ],
-          //limit: { signal: "min(invert('xScale', abs(datum.x1-datum.x0)), 1500)" },
+          limit: { signal: "warn('limit', datum.l === 44 && datum, min(scale('limitScale', abs(datum.x1-datum.x0)), 15000))" },
           x: { scale: 'xScale', signal: "datum.x0" },
           y: { scale: 'yScale', signal: "datum.y0" },
-          dy: { signal: "min(invert('yScale', abs(datum.y1-datum.y0)), 20)" },
+          dy: { signal: "min(scale('fontScale', abs(datum.y1-datum.y0)*2/3), 20)" },
+          dx: { signal: "min(scale('limitScale', abs(datum.x1-datum.x0)*4/5), 5)" },
         }
       }
     },
@@ -2958,7 +2964,16 @@ const vegaSpec = (width, height, chartStruct) => {
       nice: false,
       zero: false,
       domain: { data: "tree", fields: ["y0", "y1"] },
-      range: { signal: "[9, 20]" }
+      range: { signal: "[0, span(yRange)]" }
+    },
+    {
+      name: "limitScale",
+      type: "linear",
+      round: false,
+      nice: false,
+      zero: false,
+      domain: { data: "tree", fields: ["x0", "x1"] },
+      range: { signal: "[0, span(xRange)]" }
     },
     ...(chartStruct.columnsData.color ? _buildColorsScales(chartStruct) : []),
     {

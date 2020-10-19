@@ -312,12 +312,12 @@ const handleZoom = (_signal, signalValue) => {
     newYRange = [0, 1];
   }
 
-  console.group("zooming");
-  //console.log("signalValue", signalValue);
-  //console.log("oldRange", xRangeNormalized);
-  console.log("newRange", newXRange);
-  console.log("newRange", span(newXRange));
-  console.groupEnd();
+  // console.group("zooming");
+  // //console.log("signalValue", signalValue);
+  // //console.log("oldRange", xRangeNormalized);
+  // console.log("newRange", newXRange);
+  // console.log("newRange", span(newXRange));
+  // console.groupEnd();
 
   const userData = vegaView.data("userData")[0];
   const columnsData = userData.columnsData;
@@ -426,12 +426,12 @@ const handlePan = (_signal, signalValue) => {
     return null;
   }
 
-  console.group("panning");
-  //console.log("signalValue", signalValue);
-  //console.log("oldRange", xRangeNormalized);
-  console.log("newRange", newXRange);
-  console.log("span newRange", span(newXRange));
-  console.groupEnd();
+  // console.group("panning");
+  // //console.log("signalValue", signalValue);
+  // //console.log("oldRange", xRangeNormalized);
+  // console.log("newRange", newXRange);
+  // console.log("span newRange", span(newXRange));
+  // console.groupEnd();
 
   const userData = vegaView.data("userData")[0];
   const columnsData = userData.columnsData;
