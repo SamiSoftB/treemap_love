@@ -196,8 +196,6 @@ const _getRectBrushSelectionOpsForApi = ({
       y: ySegmentInDomain
     };
 
-    console.log("brush", xSegmentInDomain, ySegmentInDomain);
-
     const indexes = currentData.filter((datum) => {
       return (
         (xExclusive ||
@@ -208,7 +206,6 @@ const _getRectBrushSelectionOpsForApi = ({
       );
     });
 
-    console.log("indexes", indexes);
     // getRectBrushSelectionOpsForApi({
     //   quantitativeExclusiveFlag,
     //   categoryExclusiveFlag,
@@ -278,6 +275,195 @@ const handleYSliceSelectionBrush = (_signal, signalValue) => {
   }
 };
 
+const handleZoom = (_signal, signalValue) => {
+  if (!vegaView || !signalValue) return null;
+  const {
+    anchor,
+    zoomX,
+    zoomY,
+    xRangeNormalized,
+    yRangeNormalized,
+    width,
+    height
+  } = signalValue;
+
+  let newXRange = [
+    span(xRangeNormalized) > 1 && xRangeNormalized[0] === 0
+      ? 0
+      : anchor[0] / width +
+        (xRangeNormalized[0] - anchor[0] / width) * zoomX[0],
+    span(xRangeNormalized) > 1 && xRangeNormalized[1] === 1
+      ? 1
+      : anchor[0] / width + (xRangeNormalized[1] - anchor[0] / width) * zoomX[1]
+  ];
+  let newYRange = [
+    span(yRangeNormalized) > 1 && yRangeNormalized[0] === 0
+      ? 0
+      : anchor[1] / height +
+        (yRangeNormalized[0] - anchor[1] / height) * zoomY[0],
+    span(yRangeNormalized) > 1 && yRangeNormalized[1] === 1
+      ? 1
+      : anchor[1] / height +
+        (yRangeNormalized[1] - anchor[1] / height) * zoomY[1]
+  ];
+
+  if (span(newXRange) < 1 || span(newYRange) < 1) {
+    newXRange = [0, 1];
+    newYRange = [0, 1];
+  }
+
+  console.group("zooming");
+  //console.log("signalValue", signalValue);
+  //console.log("oldRange", xRangeNormalized);
+  console.log("newRange", newXRange);
+  console.log("newRange", span(newXRange));
+  console.groupEnd();
+
+  const userData = vegaView.data("userData")[0];
+  const columnsData = userData.columnsData;
+
+  const newUserData = {
+    ...columnsData,
+    x: {
+      ...columnsData.x,
+      rangeZoom: newXRange,
+      zoomed: true
+    },
+    y: {
+      ...columnsData.y,
+      rangeZoom: newYRange,
+      zoomed: true
+    },
+    operation: "zooming"
+  };
+  const datumTuplesToModify = [
+    {
+      datum: userData,
+      field: "columnsData",
+      value: newUserData
+    }
+  ];
+
+  applyChanges(vegaView, "userData", { datumTuplesToModify });
+};
+
+const span = (x) => {
+  return x[1] - x[0];
+};
+const handlePan = (_signal, signalValue) => {
+  if (!signalValue) return null;
+  const {
+    xcur,
+    ycur,
+    xRangeNormalized,
+    yRangeNormalized,
+    deltaX,
+    deltaY,
+    width,
+    height
+  } = signalValue;
+
+  if (
+    !(
+      xcur &&
+      ycur &&
+      xRangeNormalized &&
+      yRangeNormalized &&
+      deltaX &&
+      deltaY &&
+      width &&
+      height
+    )
+  )
+    return null;
+
+  if (
+    deltaX[0] === 0 &&
+    deltaX[1] === 0 &&
+    deltaY[0] === 0 &&
+    deltaY[1] === 0
+  ) {
+    return null;
+  }
+
+  const _clampRange = (range, min, max) => {
+    let lo = range[0];
+    let hi = range[1];
+    let span;
+
+    if (hi < lo) {
+      span = hi;
+      hi = lo;
+      lo = span;
+    }
+    span = hi - lo;
+
+    return span >= max - min
+      ? [min, max]
+      : [(lo = Math.min(Math.max(lo, min), max - span)), lo + span];
+  };
+
+  const newXRange = _clampRange(
+    [(xcur[0] + deltaX[0]) / width, (xcur[1] + deltaX[1]) / width],
+    1 - span(xRangeNormalized),
+    span(xRangeNormalized)
+  );
+
+  const newYRange = _clampRange(
+    [(ycur[0] + deltaY[0]) / height, (ycur[1] + deltaY[1]) / height],
+    1 - span(yRangeNormalized),
+    span(yRangeNormalized)
+  );
+
+  if (
+    !(
+      Number.isFinite(newXRange[0]) &&
+      Number.isFinite(newXRange[1]) &&
+      Number.isFinite(newYRange[0]) &&
+      Number.isFinite(newYRange[1])
+    )
+  ) {
+    return null;
+  }
+
+  console.group("panning");
+  //console.log("signalValue", signalValue);
+  //console.log("oldRange", xRangeNormalized);
+  console.log("newRange", newXRange);
+  console.log("span newRange", span(newXRange));
+  console.groupEnd();
+
+  const userData = vegaView.data("userData")[0];
+  const columnsData = userData.columnsData;
+
+  const newUserData = {
+    ...columnsData,
+    x: {
+      ...columnsData.x,
+      rangeZoom: newXRange,
+      zoomed: true
+    },
+    y: {
+      ...columnsData.y,
+      rangeZoom: newYRange,
+      zoomed: true
+    },
+    operation: "panning"
+  };
+  const datumTuplesToModify = [
+    {
+      datum: userData,
+      field: "columnsData",
+      value: newUserData
+    }
+  ];
+
+  setTimeout(
+    () => applyChanges(vegaView, "userData", { datumTuplesToModify }),
+    0
+  );
+};
+
 document.getElementById("app").innerHTML = `<div id="vega-container"></div>`;
 
 vegaEmbed("#vega-container", vegaSpec(700, 600, chartStruct), {
@@ -299,14 +485,16 @@ vegaEmbed("#vega-container", vegaSpec(700, 600, chartStruct), {
       "rectBrushForSelection",
       handleRectangleSelectionBrush
     );
-    result.view.addSignalListener(
-      "sliceXBrushForSelection",
-      handleXSliceSelectionBrush
-    );
-    result.view.addSignalListener(
-      "sliceYBrushForSelection",
-      handleYSliceSelectionBrush
-    );
+    // result.view.addSignalListener(
+    //   "sliceXBrushForSelection",
+    //   handleXSliceSelectionBrush
+    // );
+    // result.view.addSignalListener(
+    //   "sliceYBrushForSelection",
+    //   handleYSliceSelectionBrush
+    // );
+    result.view.addSignalListener("zoomObj", handleZoom);
+    result.view.addSignalListener("panObj", handlePan);
   })
   .catch((error) => {
     console.error("vega:error", error);

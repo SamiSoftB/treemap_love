@@ -266,6 +266,17 @@ const vegaSpec = (width, height, chartStruct) => {
       values: [chartStruct]
     },
     {
+      name: "userData",
+      values: [
+        {
+          columnsData: {
+            x: { rangeZoom: [0, 1] },
+            y: { rangeZoom: [0, 1] }
+          }
+        }
+      ]
+    },
+    {
       name: "tree",
       values: [
         { l: -1, name: "root", column: "root" },
@@ -2221,7 +2232,7 @@ const vegaSpec = (width, height, chartStruct) => {
         }
       ],
       transform: [
-        { type: "filter", expr: "!isDefined(datum.size) || datum.size >= 0" },
+        { type: "filter", expr: "(!isDefined(datum.size) || datum.size >= 0)" },
         {
           type: "formula",
           as: "sizeSelected",
@@ -2241,7 +2252,7 @@ const vegaSpec = (width, height, chartStruct) => {
           round: true,
           method: { signal: "layout" },
           ratio: { signal: "aspectRatio" },
-          size: [{ signal: "width" }, { signal: "height-50" }],
+          size: [{ signal: "width" }, { signal: "height" }],
           paddingInner: 0,
           paddingTop: 30
         }
@@ -2285,10 +2296,10 @@ const vegaSpec = (width, height, chartStruct) => {
   ];
   const signals = [
     //{ name: "testum", update: "warn('tree', data('tree') )" },
-    {
-      name: "testum2",
-      update: "warn('levesSelected', data('leaveSelected') )"
-    },
+    // {
+    //   name: "testum2",
+    //   update: "warn('levesSelected', data('leaveSelected') )"
+    // },
     getEventProxySignal(),
     {
       name: "NoSelection",
@@ -2379,12 +2390,347 @@ const vegaSpec = (width, height, chartStruct) => {
         }
       ]
     },
+    {
+      name: "xcur",
+      value: null,
+      on: [
+        {
+          events: "mousedown, touchstart, touchend, wheel",
+          update: "slice(xRange)"
+        }
+      ]
+    },
+    {
+      name: "ycur",
+      value: null,
+      on: [
+        {
+          events: "mousedown, touchstart, touchend, wheel",
+          update: "slice(yRange)"
+        }
+      ]
+    },
+    {
+      name: "down",
+      value: null,
+      on: [
+        { events: "touchend", update: "null" },
+        {
+          events: "mousedown, touchstart",
+          update: "xy()"
+        }
+      ]
+    },
+    {
+      name: "deltaX",
+      init: "[0, 0]",
+      on: [
+        {
+          events: [
+            {
+              source: "window",
+              type: "mousemove",
+              filter: [
+                "event.altKey",
+                "!event.ctrlKey && !event.metaKey",
+                "event.button === 0"
+              ],
+              consume: true,
+              between: [
+                {
+                  type: "mousedown",
+                  filter: [
+                    "event.altKey",
+                    "!event.ctrlKey && !event.metaKey",
+                    "event.button === 0"
+                  ]
+                },
+                { source: "window", type: "mouseup" }
+              ]
+            },
+            {
+              type: "touchmove",
+              consume: true,
+              filter: "event.touches.length === 1"
+            }
+          ],
+          update: "down ? [-down[0]+x(), -down[0]+x()]: [0,0]"
+        },
+        {
+          events:
+            "[@GroupAxisX:mousedown[event.item && event.item.cursor && event.item.cursor==='ew-resize'], window:mouseup] > view:mousemove!",
+          update: "down ? [down[0]-x(), down[0]-x()] : [0,0]"
+        },
+        {
+          events:
+            "[@GroupAxisX:mousedown[event.item && event.item.cursor && event.item.cursor==='w-resize'], window:mouseup] > view:mousemove!",
+          update: "down ? [down[0]-x(), 0] : [0,0]"
+        },
+        {
+          events:
+            "[@GroupAxisX:mousedown[event.item && event.item.cursor && event.item.cursor==='e-resize'], window:mouseup] > view:mousemove!",
+          update: "down ? [0,down[0]-x()] : [0,0]"
+        },
+        {
+          events:
+            "[@GroupAxisY:mousedown[event.item && event.item.cursor && event.item.cursor==='ns-resize'], window:mouseup] > view:mousemove!",
+          update: "[0,0]"
+        },
+        {
+          events:
+            "[@GroupAxisY:mousedown[event.item && event.item.cursor && event.item.cursor==='n-resize'], window:mouseup] > view:mousemove!",
+          update: "[0,0]"
+        },
+        {
+          events:
+            "[@GroupAxisY:mousedown[event.item && event.item.cursor && event.item.cursor==='s-resize'], window:mouseup] > view:mousemove!",
+          update: "[0,0]"
+        }
+      ]
+    },
+    {
+      name: "deltaY",
+      init: "[0, 0]",
+      on: [
+        {
+          events: [
+            {
+              source: "window",
+              type: "mousemove",
+              filter: [
+                "event.altKey",
+                "!event.ctrlKey && !event.metaKey",
+                "event.button === 0"
+              ],
+              consume: true,
+              between: [
+                { type: "mousedown" },
+                { source: "window", type: "mouseup" }
+              ]
+            },
+            {
+              type: "touchmove",
+              consume: true,
+              filter: "event.touches.length === 1"
+            }
+          ],
+          update: 'down ? [y()-down[1], y()-down[1]] : [0,0]',
+        },
+        {
+          events:
+            "[@GroupAxisX:mousedown[event.item && event.item.cursor && event.item.cursor==='ew-resize'], window:mouseup] > view:mousemove!",
+          update: "[0,0]"
+        },
+        {
+          events:
+            "[@GroupAxisX:mousedown[event.item && event.item.cursor && event.item.cursor==='w-resize'], window:mouseup] > view:mousemove!",
+          update: "[0,0]"
+        },
+        {
+          events:
+            "[@GroupAxisX:mousedown[event.item && event.item.cursor && event.item.cursor==='e-resize'], window:mouseup] > view:mousemove!",
+          update: "[0,0]"
+        },
+        {
+          events:
+            "[@GroupAxisY:mousedown[event.item && event.item.cursor && event.item.cursor==='ns-resize'], window:mouseup] > view:mousemove!",
+          update: "down ? [y()-down[1], y()-down[1]] : [0,0]"
+        },
+        {
+          events:
+            "[@GroupAxisY:mousedown[event.item && event.item.cursor && event.item.cursor==='n-resize'], window:mouseup] > view:mousemove!",
+          update: "down ? [0,y()-down[1]] : [0,0]"
+        },
+        {
+          events:
+            "[@GroupAxisY:mousedown[event.item && event.item.cursor && event.item.cursor==='s-resize'], window:mouseup] > view:mousemove!",
+          update: "down ? [y()-down[1],0] : [0,0]"
+        }
+      ]
+    },
+    {
+      name: "anchor",
+      value: [0, 0],
+      on: [
+        {
+          events: "wheel",
+          update: "[invert('xScale', x()), invert('yScale', y())]"
+        }
+        // {
+        //   events: {
+        //     type: 'touchstart',
+        //     filter: 'event.touches.length===2',
+        //   },
+        //   update: '[(xdom[0] + xdom[1]) / 2, (ydom[0] + ydom[1]) / 2]',
+        // }
+      ]
+    },
+    {
+      name: "zoomX",
+      init: "[1,1]",
+      on: [
+        {
+          events: "view:wheel![!event.item ||!event.item.cursor]",
+          update:
+            "abs(event.deltaY) > abs(event.deltaX) ? [pow(1.001, -event.deltaY * pow(16, event.deltaMode)),pow(1.001, -event.deltaY * pow(16, event.deltaMode))]: [1,1]"
+        },
+        {
+          events:
+            "@GroupAxisX:wheel![event.item && event.item.cursor && event.item.cursor==='ew-resize']",
+          update:
+            "[pow(1.001, event.deltaY * pow(16, event.deltaMode)),pow(1.001, event.deltaY * pow(16, event.deltaMode))]"
+        },
+        {
+          events:
+            "@GroupAxisX:wheel![event.item && event.item.cursor && event.item.cursor==='w-resize']",
+          update: "[pow(1.001, event.deltaY * pow(16, event.deltaMode)),1]"
+        },
+        {
+          events:
+            "@GroupAxisX:wheel![event.item && event.item.cursor && event.item.cursor==='e-resize']",
+          update: "[1,pow(1.001, event.deltaY * pow(16, event.deltaMode))]"
+        },
+        {
+          events:
+            "@GroupAxisY:wheel![event.item && event.item.cursor && event.item.cursor==='ns-resize']",
+          update: "[1,1]"
+        },
+        {
+          events:
+            "@GroupAxisY:wheel![event.item && event.item.cursor && event.item.cursor==='s-resize']",
+          update: "[1,1]"
+        },
+        {
+          events:
+            "@GroupAxisY:wheel![event.item && event.item.cursor && event.item.cursor==='n-resize']",
+          update: "[1,1]"
+        }
+      ]
+    },
+
+    // Yaxis
+    {
+      name: "zoomY",
+      init: "[1,1]",
+      on: [
+        {
+          events: "view:wheel![!event.item ||!event.item.cursor]",
+          update:
+            "abs(event.deltaY) > abs(event.deltaX) ? [pow(1.001, -event.deltaY * pow(16, event.deltaMode)),pow(1.001, -event.deltaY * pow(16, event.deltaMode))]: [1,1]"
+        },
+        {
+          events:
+            "@GroupAxisX:wheel![event.item && event.item.cursor && event.item.cursor==='ew-resize']",
+
+          update: "[1,1]"
+        },
+        {
+          events:
+            "@GroupAxisX:wheel![event.item && event.item.cursor && event.item.cursor==='w-resize']",
+
+          update: "[1,1]"
+        },
+        {
+          events:
+            "@GroupAxisX:wheel![event.item && event.item.cursor && event.item.cursor==='e-resize']",
+
+          update: "[1,1]"
+        },
+        {
+          events:
+            "@GroupAxisY:wheel![event.item && event.item.cursor && event.item.cursor==='ns-resize']",
+          update:
+            "[pow(1.001, event.deltaY * pow(16, event.deltaMode)),pow(1.001, event.deltaY * pow(16, event.deltaMode))]"
+        },
+        {
+          events:
+            "@GroupAxisY:wheel![event.item && event.item.cursor && event.item.cursor==='s-resize']",
+          update: "[pow(1.001, event.deltaY * pow(16, event.deltaMode)),1]"
+        },
+        {
+          events:
+            "@GroupAxisY:wheel![event.item && event.item.cursor && event.item.cursor==='n-resize']",
+          update: "[1,pow(1.001, event.deltaY * pow(16, event.deltaMode))]"
+        }
+      ]
+    },
+    {
+      name: "zoomObj",
+      on: [
+        {
+          events: { signal: "[zoomX, zoomY]" },
+          update: `
+          {
+            anchor: anchor,
+            zoomX: zoomX,
+            xRangeNormalized: xRangeNormalized,
+            zoomY: zoomY,
+            yRangeNormalized: yRangeNormalized,
+            width: width,
+            height: height
+          }`
+        }
+      ]
+    },
+    {
+      name: "panObj",
+      on: [
+        {
+          events: { signal: "[deltaX, deltaY]" },
+          update: `
+          {
+            xcur: xcur,
+            ycur: ycur,
+            xRangeNormalized: xRangeNormalized,
+            yRangeNormalized: yRangeNormalized,
+            deltaX: deltaX,
+            deltaY: deltaY,
+            width: width,
+            height: height
+          }`
+        }
+      ]
+    },
+    {
+      name: "extractXZoom",
+      update:
+        "length(data('userData')) > 0  && data('userData')[0].columnsData.x.rangeZoom"
+    },
+    {
+      name: "extractYZoom",
+      update:
+        "length(data('userData')) > 0 && data('userData')[0].columnsData.y.rangeZoom"
+    },
+    {
+      name: "xRangeNormalized",
+      update: "slice([0,1])",
+      on: [
+        {
+          events: { signal: "extractXZoom" },
+          update: "extractXZoom"
+        }
+      ]
+    },
+    {
+      name: "xRange",
+      update: "[xRangeNormalized[0]*width,xRangeNormalized[1]*width]"
+    },
+    {
+      name: "yRangeNormalized",
+      update: "slice([0,1])",
+      on: [
+        {
+          events: { signal: "extractYZoom" },
+          update: "extractYZoom"
+        }
+      ]
+    },
+    {
+      name: "yRange",
+      update: "[yRangeNormalized[0]*height,yRangeNormalized[1]*height]"
+    },
     getRectBrush(),
-    getSliceXBrush(),
-    getSliceYBrush(),
     getRectBrushForSelection(),
-    getSliceXBrushForSelection(),
-    getSliceYBrushForSelection()
   ];
   const marks = [
     {
@@ -2407,10 +2753,10 @@ const vegaSpec = (width, height, chartStruct) => {
       interactive: false,
       encode: {
         update: {
-          x: { field: "x0" },
-          y: { field: "y0" },
-          x2: { field: "x1" },
-          y2: { field: "y1" },
+          x: { scale: "xScale", field: "x0" },
+          y: { scale: "yScale", field: "y0" },
+          x2: { scale: "xScale", field: "x1" },
+          y2: { scale: "yScale", field: "y1" },
           fill: { value: "lightgrey" },
           stroke: { value: "white" }
         }
@@ -2423,10 +2769,10 @@ const vegaSpec = (width, height, chartStruct) => {
       interactive: false,
       encode: {
         update: {
-          x: { field: "x0" },
-          y: { field: "y0" },
-          x2: { field: "x1" },
-          y2: { field: "y1" },
+          x: { scale: "xScale", field: "x0" },
+          y: { scale: "yScale", field: "y0" },
+          x2: { scale: "xScale", field: "x1" },
+          y2: { scale: "yScale", field: "y1" },
           fill: [
             ...(chartStruct.columnsData.color
               ? [
@@ -2450,10 +2796,10 @@ const vegaSpec = (width, height, chartStruct) => {
       interactive: false,
       encode: {
         update: {
-          x: { field: "x0" },
-          y: { signal: "datum.y0Selected" },
-          x2: { field: "x1" },
-          y2: { field: "y1" },
+          x: { scale: "xScale", field: "x0" },
+          y: { scale: "yScale", signal: "datum.y0Selected" },
+          x2: { scale: "xScale", field: "x1" },
+          y2: { scale: "yScale", field: "y1" },
           fill: [
             ...(chartStruct.columnsData.color
               ? [{ scale: "colorFull", field: "color" }]
@@ -2470,10 +2816,10 @@ const vegaSpec = (width, height, chartStruct) => {
       interactive: false,
       encode: {
         update: {
-          x: { field: "x0" },
-          y: { field: "y0" },
-          x2: { field: "x1" },
-          y2: { field: "y1" },
+          x: { scale: "xScale", field: "x0" },
+          y: { scale: "yScale", field: "y0" },
+          x2: { scale: "xScale", field: "x1" },
+          y2: { scale: "yScale", field: "y1" },
           fill: { value: null },
           stroke: { value: "white" },
           strokeWidth: { value: 2 }
@@ -2487,10 +2833,10 @@ const vegaSpec = (width, height, chartStruct) => {
       interactive: true,
       encode: {
         update: {
-          x: { field: "x0" },
-          y: { field: "y0" },
-          x2: { field: "x1" },
-          y2: { field: "y1" },
+          x: { scale: "xScale", field: "x0" },
+          y: { scale: "yScale", field: "y0" },
+          x2: { scale: "xScale", field: "x1" },
+          y2: { scale: "yScale", field: "y1" },
           fill: { value: "transparent" },
           stroke: { value: "white" },
           strokeWidth: { value: 0 },
@@ -2507,8 +2853,8 @@ const vegaSpec = (width, height, chartStruct) => {
       encode: {
         update: {
           font: { value: "Helvetica Neue, Arial" },
-          align: { value: "left" },
-          baseline: { value: "bottom" },
+          //align: { value: "left" },
+          //baseline: { value: "bottom" },
           fill: [
             ...(chartStruct.columnsData.color
               ? [
@@ -2522,23 +2868,23 @@ const vegaSpec = (width, height, chartStruct) => {
           ],
           text: [
             {
-              test:
-                "datum.x1-datum.x0 >20 && floor(5*log(datum.y1-datum.y0)) > 12",
-              field: "name"
-            },
-            { value: null }
+              test: "isDefined(datum.name)",
+              signal: "datum.name"
+            }
           ],
           fontSize: [
             {
-              test: "floor(5*log(datum.y1-datum.y0)) > 12",
-              signal: "floor(5*log(datum.y1-datum.y0))"
+              //test: "(datum.y1-datum.y0) > 0",
+              signal:
+                "min(floor(3*log(invert('yScale', abs(datum.y1-datum.y0)))), 24)"
             },
-            { value: null }
+            //{ value: 12 }
+            
           ],
-          limit: { signal: "datum.x1-datum.x0-10" },
-          x: { signal: "datum.x0 + 10" },
-          y: { signal: "datum.y0 + 30" },
-          dy: { value: 0 }
+          //limit: { signal: "min(invert('xScale', abs(datum.x1-datum.x0)), 1500)" },
+          x: { scale: 'xScale', signal: "datum.x0" },
+          y: { scale: 'yScale', signal: "datum.y0" },
+          dy: { signal: "min(invert('yScale', abs(datum.y1-datum.y0)), 20)" },
         }
       }
     },
@@ -2584,83 +2930,7 @@ const vegaSpec = (width, height, chartStruct) => {
           }
         }
       }
-    },
-    {
-      type: "rect",
-      name: "sliceXBrush",
-      encode: {
-        enter: { y: { value: 0 } },
-        update: {
-          stroke: [
-            { test: "sliceXBrush.state === 'resizing'", value: "#ABB9C8" },
-            { value: null }
-          ],
-          strokeWidth: [
-            {
-              test:
-                "sliceXBrush.state === 'resizing' || sliceXBrush.state === 'stop'",
-              value: 2
-            },
-            { value: 0 }
-          ],
-          fill: [
-            { test: "sliceXBrush.state === 'resizing'", value: "#8b9bac" },
-            { value: null }
-          ],
-          height: { signal: "height" },
-          fillOpacity: {
-            signal: "(sliceXBrush.state === 'resizing') ? 0.2 : 0"
-          },
-          zindex: { signal: "sliceXBrush.state === 'resizing' ? 10 : -100" },
-          x: {
-            signal:
-              "sliceXBrush.state === 'resizing' && sliceXBrush.segmentInRange.x[0]"
-          },
-          x2: {
-            signal:
-              "sliceXBrush.state === 'resizing' && sliceXBrush.segmentInRange.x[1]"
-          }
-        }
-      }
-    },
-    {
-      type: "rect",
-      name: "sliceYBrush",
-      encode: {
-        enter: { x: { value: 0 } },
-        update: {
-          stroke: [
-            { test: "sliceYBrush.state === 'resizing'", value: "#ABB9C8" },
-            { value: null }
-          ],
-          strokeWidth: [
-            {
-              test:
-                "sliceYBrush.state === 'resizing' || sliceYBrush.state === 'stop'",
-              value: 2
-            },
-            { value: 0 }
-          ],
-          fill: [
-            { test: "sliceYBrush.state === 'resizing'", value: "#8b9bac" },
-            { value: null }
-          ],
-          width: { signal: "width" },
-          fillOpacity: {
-            signal: "(sliceYBrush.state === 'resizing') ? 0.2 : 0"
-          },
-          zindex: { signal: "sliceYBrush.state === 'resizing' ? 10 : -100" },
-          y: {
-            signal:
-              "sliceYBrush.state === 'resizing' && sliceYBrush.segmentInRange.y[0]"
-          },
-          y2: {
-            signal:
-              "sliceYBrush.state === 'resizing' && sliceYBrush.segmentInRange.y[1]"
-          }
-        }
-      }
-    }
+    }, 
   ];
   const scales = [
     {
@@ -2670,7 +2940,7 @@ const vegaSpec = (width, height, chartStruct) => {
       nice: false,
       zero: false,
       domain: { data: "tree", fields: ["x0", "x1"] },
-      range: "width"
+      range: { signal: "xRange" }
     },
     {
       name: "yScale",
@@ -2679,7 +2949,16 @@ const vegaSpec = (width, height, chartStruct) => {
       nice: false,
       zero: false,
       domain: { data: "tree", fields: ["y0", "y1"] },
-      range: { signal: "[0, height]" }
+      range: { signal: "yRange" }
+    },
+    {
+      name: "fontScale",
+      type: "linear",
+      round: false,
+      nice: false,
+      zero: false,
+      domain: { data: "tree", fields: ["y0", "y1"] },
+      range: { signal: "[9, 20]" }
     },
     ...(chartStruct.columnsData.color ? _buildColorsScales(chartStruct) : []),
     {
@@ -2708,7 +2987,7 @@ const vegaSpec = (width, height, chartStruct) => {
     width: width,
     height: height,
     autosize: { type: "none", resize: true },
-    padding: { top: 10, right: 10, bottom: 10, left: 20 },
+    padding: { top: 10, right: 10, bottom: 10, left: 10 },
     data,
     signals,
     marks,
