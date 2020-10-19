@@ -2261,7 +2261,7 @@ const vegaSpec = (width, height, chartStruct) => {
     {
       name: "treeNaN",
       source: "tree",
-      transform: [{ type: "collect", sort: {field: "superSize"} }]
+      transform: [{ type: "collect", sort: { field: "superSize" } }]
     },
     {
       name: "nodes",
@@ -2519,7 +2519,7 @@ const vegaSpec = (width, height, chartStruct) => {
               filter: "event.touches.length === 1"
             }
           ],
-          update: 'down ? [y()-down[1], y()-down[1]] : [0,0]',
+          update: "down ? [y()-down[1], y()-down[1]] : [0,0]"
         },
         {
           events:
@@ -2735,7 +2735,7 @@ const vegaSpec = (width, height, chartStruct) => {
       update: "[yRangeNormalized[0]*height,yRangeNormalized[1]*height]"
     },
     getRectBrush(),
-    getRectBrushForSelection(),
+    getRectBrushForSelection()
   ];
   const marks = [
     {
@@ -2879,15 +2879,27 @@ const vegaSpec = (width, height, chartStruct) => {
           ],
           fontSize: [
             {
+              test: "scale('limitScale', abs(datum.x1-datum.x0)) > 5",
               signal:
-                "min(floor(4*log(scale('fontScale', abs(datum.y1-datum.y0)))), 28)"
-            }, 
+                "min(floor(3*log(scale('fontScale', abs(datum.y1-datum.y0)))), 24)"
+            },{
+              value: null
+            }
           ],
-          limit: { signal: "min(scale('limitScale', abs(datum.x1-datum.x0)-5), 15000)" },
-          x: { scale: 'xScale', signal: "datum.x0" },
-          y: { scale: 'yScale', signal: "datum.y0" },
-          dy: { signal: "min(scale('fontScale', abs(datum.y1-datum.y0)*4/5), 20)" },
-          dx: { signal: "min(scale('limitScale', abs(datum.x1-datum.x0)*4/5), 5)" },
+          limit: [
+            {
+              signal:
+                "min(scale('limitScale', abs(datum.x1-datum.x0)), width)"
+            },
+          ],
+          x: { scale: "xScale", signal: "datum.x0" },
+          y: { scale: "yScale", signal: "datum.y0" },
+          dy: {
+            signal: "min(scale('fontScale', abs(datum.y1-datum.y0)*4/5), 20)"
+          },
+          dx: {
+            signal: "min(scale('limitScale', abs(datum.x1-datum.x0)*4/5), 5)"
+          }
         }
       }
     },
@@ -2933,7 +2945,7 @@ const vegaSpec = (width, height, chartStruct) => {
           }
         }
       }
-    }, 
+    }
   ];
   const scales = [
     {
