@@ -2879,17 +2879,14 @@ const vegaSpec = (width, height, chartStruct) => {
           ],
           fontSize: [
             {
-              //test: "(datum.y1-datum.y0) > 0",
               signal:
-                "warn('fontSize', datum.l === 44 && datum, min(floor(4*log(scale('fontScale', abs(datum.y1-datum.y0)))), 28))"
-            },
-            //{ value: 12 }
-            
+                "min(floor(4*log(scale('fontScale', abs(datum.y1-datum.y0)))), 28)"
+            }, 
           ],
-          limit: { signal: "warn('limit', datum.l === 44 && datum, min(scale('limitScale', abs(datum.x1-datum.x0)), 15000))" },
+          limit: { signal: "min(scale('limitScale', abs(datum.x1-datum.x0)-5), 15000)" },
           x: { scale: 'xScale', signal: "datum.x0" },
           y: { scale: 'yScale', signal: "datum.y0" },
-          dy: { signal: "min(scale('fontScale', abs(datum.y1-datum.y0)*2/3), 20)" },
+          dy: { signal: "min(scale('fontScale', abs(datum.y1-datum.y0)*4/5), 20)" },
           dx: { signal: "min(scale('limitScale', abs(datum.x1-datum.x0)*4/5), 5)" },
         }
       }
